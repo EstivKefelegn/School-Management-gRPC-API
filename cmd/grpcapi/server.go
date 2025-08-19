@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"schoolmanagementGRPC/internals/api/handlers"
+	"schoolmanagementGRPC/internals/respositories/mongodb"
 	pb "schoolmanagementGRPC/proto/gen"
 
 	"github.com/joho/godotenv"
@@ -14,6 +15,7 @@ import (
 )
 
 func main() {
+	mongodb.CreateMongoClient()
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file", err)
