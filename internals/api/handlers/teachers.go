@@ -8,67 +8,111 @@ import (
 	"schoolmanagementGRPC/internals/respositories/mongodb"
 	"schoolmanagementGRPC/pkg/utils"
 	pb "schoolmanagementGRPC/proto/gen"
+	"strings"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func (s *Server) AddTeachers(ctx context.Context, req *pb.Teachers) (*pb.Teachers, error) {
-	client, err := mongodb.CreateMongoClient()
+
+	// i want the id to be filled with by mongo it self so i want the requeted value of the id should be empty
+	for _, teacher := range req.GetTeachers() {
+		if teacher.Id != "" {
+			return nil, status.Error(codes.InvalidArgument, "Request is in incorrect format: non empty id fields are not allowed")
+		}
+	}
+
+	addedTeachers, err := mongodb.AddTeachersToDb(ctx, req.GetTeachers())
 	if err != nil {
-		return nil, utils.ErrorHandler(err, "internal Error")
-	}
-
-	defer client.Disconnect(ctx)
-
-	newTeachers := make([]*models.Teacher, len(req.GetTeachers()))
-	for i, pbTeacher := range req.GetTeachers() {
-		modelTeacher := models.Teacher{FirstName: "john"}
-		pbVal := reflect.ValueOf(pbTeacher).Elem()
-		modelVal := reflect.ValueOf(&modelTeacher).Elem()
-
-		for i := 0; i < pbVal.NumField(); i++ {
-			pbField := pbVal.Field(i)
-			fieldName := pbVal.Type().Field(i).Name
-
-			modelField := modelVal.FieldByName(fieldName)
-			if modelField.IsValid() && modelField.CanSet() {
-				modelField.Set(pbField)
-			} else {
-				// fmt.Printf("Field %s is not valid or cannot be set\n", fieldName)
-				continue
-			}
-		}
-		fmt.Println(newTeachers)
-		newTeachers[i] = &modelTeacher
-	}
-	var addedTeachers []*pb.Teacher
-	for _, teacher := range newTeachers {
-		result, err := client.Database("school").Collection("teachers").InsertOne(ctx, teacher)
-		if err != nil {
-			return nil, utils.ErrorHandler(err, "Error adding value to database")
-		}
-
-		// insertedID is interface type so we will convert it to string HEX will convert that to string
-		objectID, ok := result.InsertedID.(primitive.ObjectID)
-		if ok {
-			teacher.Id = objectID.Hex()
-		}
-
-		// The return the values to the user
-		pbTeacher := &pb.Teacher{}
-		modelVal := reflect.ValueOf(*teacher)
-		pbVal := reflect.ValueOf(pbTeacher).Elem()
-
-		for i := 0; i < modelVal.NumField(); i++ {
-			modelField := modelVal.Field(i)
-			modelFieldType := modelVal.Type().Field(i)
-			pbField := pbVal.FieldByName(modelFieldType.Name)
-			if pbField.IsValid() && pbField.CanSet() {
-				pbField.Set(modelField)
-			}
-		}
-		addedTeachers = append(addedTeachers, pbTeacher)
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return &pb.Teachers{Teachers: addedTeachers}, nil
+}
+
+func (s *Server) GetTeachers(ctx context.Context, req *pb.GetTeachersRequest) (*pb.Teachers, error) {
+	// Filtering getting the filtes from the request, another function
+	filter, err := buildFilterForTeacher(req.Teacher)
+	if err != nil {
+		return nil, utils.ErrorHandler(err, "Internal Error")
+	}
+	// Sorting getting the sort options from the requets
+	sortOptions := buildSortOptions(req.GetSortField())
+
+	// Access the database to fetch data,  another function
+	teachers, err := mongodb.GetTeachersFromDb(ctx, sortOptions, filter)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return &pb.Teachers{Teachers: teachers}, nil
+
+}
+
+func buildFilterForTeacher(teacherObj *pb.Teacher) (bson.M, error) {
+	filter := bson.M{}
+
+	if teacherObj == nil {
+		// This means there is no data to filter
+		return filter, nil
+	}
+
+	var modelTeacher models.Teacher
+	modelVal := reflect.ValueOf(&modelTeacher).Elem()
+	modelType := modelVal.Type()
+
+	reqVal := reflect.ValueOf(teacherObj).Elem()
+	reqType := reqVal.Type()
+
+	for i := 0; i < reqVal.NumField(); i++ {
+		fieldVal := reqVal.Field(i)
+		fieldName := reqType.Field(i).Name
+
+		if fieldVal.IsValid() && !fieldVal.IsZero() {
+			modelField := modelVal.FieldByName(fieldName)
+			if modelField.IsValid() && modelField.CanSet() {
+				modelField.Set(fieldVal)
+			}
+		}
+	}
+
+	for i := 0; i < modelVal.NumField(); i++ {
+		fieldVal := modelVal.Field(i)
+
+		if fieldVal.IsValid() && !fieldVal.IsZero() {
+			bsonTag := modelType.Field(i).Tag.Get("bson")
+			bsonTag = strings.TrimSuffix(bsonTag, ",omitempty")
+
+			// Filter with the specific id
+			if bsonTag == "_id" {
+				objId, err := primitive.ObjectIDFromHex(teacherObj.Id)
+				if err != nil {
+					return nil, utils.ErrorHandler(err, "Invalid Id")
+				}
+				filter[bsonTag] = objId
+			} else {
+				filter[bsonTag] = fieldVal.Interface().(string) // Converting to string we make it interface to make the field value more suitable to be converted to string
+			}
+
+		}
+	}
+
+	fmt.Println("Filter:", filter)
+	return filter, nil
+}
+
+func buildSortOptions(sortFields []*pb.SortField) bson.D {
+	var sortOptions bson.D
+	for _, sortField := range sortFields {
+		order := 1
+		if sortField.GetOrder() == pb.Order_DESC {
+			order = 0
+		}
+		sortOptions = append(sortOptions, bson.E{Key: sortField.Field, Value: order})
+	}
+
+	fmt.Println("Sort Option:", sortOptions)
+	return sortOptions
 }
