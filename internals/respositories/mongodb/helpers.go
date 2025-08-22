@@ -3,7 +3,9 @@ package mongodb
 import (
 	"context"
 	"reflect"
+	"schoolmanagementGRPC/internals/models"
 	"schoolmanagementGRPC/pkg/utils"
+	pb "schoolmanagementGRPC/proto/gen"
 
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -47,3 +49,66 @@ func decodeEntities[T any, M any](ctx context.Context, cursor *mongo.Cursor, new
 	}
 	return entities, nil
 }
+
+func mapModelToPb[P any, M any](model M, newPb func() *P) *P {
+	pbStruct := newPb()
+	modelVal := reflect.ValueOf(model)
+	pbVal := reflect.ValueOf(pbStruct).Elem()
+
+	for i := 0; i < modelVal.NumField(); i++ {
+		modelField := modelVal.Field(i)
+		modelFieldType := modelVal.Type().Field(i)
+		pbField := pbVal.FieldByName(modelFieldType.Name)
+
+		if pbField.IsValid() && pbField.CanSet() {
+			pbField.Set(modelField)
+		}
+	}
+
+	return pbStruct
+}
+
+func mapModelTeacherToPb(teacherModel models.Teacher) *pb.Teacher {
+	return mapModelToPb(teacherModel, func() *pb.Teacher {return &pb.Teacher{}})
+}
+
+// func mapModelStudentToPb(studentModel models.Teacher) *pb.Teacher  {
+// 	return mapModelToPb(studentModel, func() *pb.Student {return &pb.Student{}})
+// }
+
+// func mapModelExecToPb(execModel models.Teacher) *pb.Teacher  {
+// 	return mapModelToPb(execModel, func() *pb.Exec {return &pb.Exec{}})
+// }
+
+
+func mapPbToModel[P any, M any](pbStruct P, newModel func() *M) *M {
+	modelStruct := newModel()
+	pbVal := reflect.ValueOf(pbStruct).Elem()
+	modelVal := reflect.ValueOf(modelStruct).Elem()
+
+	for i := 0; i < pbVal.NumField(); i++ {
+		pbField := pbVal.Field(i)
+		fieldName := pbVal.Type().Field(i).Name
+
+		modelField := modelVal.FieldByName(fieldName)
+		if modelField.IsValid() && modelField.CanSet() {
+			modelField.Set(pbField)
+		}
+	}
+
+	return modelStruct
+}
+
+func mapPbTeacherToModelTeacher(pbTeacher *pb.Teacher) *models.Teacher  {
+	return mapPbToModel(pbTeacher, func() *models.Teacher {return &models.Teacher{}})
+}
+
+// func mapPbTeacherToModelTeacher(pbTeacher *pb.Student) *models.Student  {
+// 	return mapPbToModel(pbStudent, func() *models.Student {return &models.Student{}})
+// }
+
+// func mapPbExecToModelTeacher(pbExec *pb.Exec) *models.Exec  {
+// 	return mapPbToModel(pbExec, func() *models.Exec {return &models.Exec{}})
+// }
+ 
+
