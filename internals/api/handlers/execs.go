@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"schoolmanagementGRPC/internals/models"
 	"schoolmanagementGRPC/internals/respositories/mongodb"
 	pb "schoolmanagementGRPC/proto/gen"
 
@@ -22,4 +23,19 @@ func (s *Server) AddExecs(ctx context.Context, req *pb.Execs) (*pb.Execs, error)
 	}
 
 	return &pb.Execs{Execs: addedExecs}, nil
+}
+
+func (s *Server) GetExecs(ctx context.Context, req *pb.GetExecsRequest) (*pb.Execs, error) {
+	filter, err := buildFilter(req.Exec, &models.Exec{})
+	if err != nil {
+		return nil, nil
+	}	
+
+	sortOptions := buildSortOptions(req.GetSortField())
+	
+	execs, err := mongodb.GetExecsFromDb(ctx, sortOptions, filter)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.Execs{Execs: execs}, nil
 }

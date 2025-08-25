@@ -19,7 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ExecsService_GetExecss_FullMethodName      = "/main.ExecsService/GetExecss"
+	ExecsService_GetExecs_FullMethodName       = "/main.ExecsService/GetExecs"
 	ExecsService_AddExecs_FullMethodName       = "/main.ExecsService/AddExecs"
 	ExecsService_UpdateExecs_FullMethodName    = "/main.ExecsService/UpdateExecs"
 	ExecsService_DeleteExecs_FullMethodName    = "/main.ExecsService/DeleteExecs"
@@ -35,7 +35,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ExecsServiceClient interface {
-	GetExecss(ctx context.Context, in *GetExecsRequest, opts ...grpc.CallOption) (*Execs, error)
+	GetExecs(ctx context.Context, in *GetExecsRequest, opts ...grpc.CallOption) (*Execs, error)
 	AddExecs(ctx context.Context, in *Execs, opts ...grpc.CallOption) (*Execs, error)
 	UpdateExecs(ctx context.Context, in *Execs, opts ...grpc.CallOption) (*Execs, error)
 	DeleteExecs(ctx context.Context, in *ExecIds, opts ...grpc.CallOption) (*DeleteExecsConfirmation, error)
@@ -55,10 +55,10 @@ func NewExecsServiceClient(cc grpc.ClientConnInterface) ExecsServiceClient {
 	return &execsServiceClient{cc}
 }
 
-func (c *execsServiceClient) GetExecss(ctx context.Context, in *GetExecsRequest, opts ...grpc.CallOption) (*Execs, error) {
+func (c *execsServiceClient) GetExecs(ctx context.Context, in *GetExecsRequest, opts ...grpc.CallOption) (*Execs, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Execs)
-	err := c.cc.Invoke(ctx, ExecsService_GetExecss_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, ExecsService_GetExecs_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +159,7 @@ func (c *execsServiceClient) DeactivateUser(ctx context.Context, in *ExecIds, op
 // All implementations must embed UnimplementedExecsServiceServer
 // for forward compatibility.
 type ExecsServiceServer interface {
-	GetExecss(context.Context, *GetExecsRequest) (*Execs, error)
+	GetExecs(context.Context, *GetExecsRequest) (*Execs, error)
 	AddExecs(context.Context, *Execs) (*Execs, error)
 	UpdateExecs(context.Context, *Execs) (*Execs, error)
 	DeleteExecs(context.Context, *ExecIds) (*DeleteExecsConfirmation, error)
@@ -179,8 +179,8 @@ type ExecsServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedExecsServiceServer struct{}
 
-func (UnimplementedExecsServiceServer) GetExecss(context.Context, *GetExecsRequest) (*Execs, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetExecss not implemented")
+func (UnimplementedExecsServiceServer) GetExecs(context.Context, *GetExecsRequest) (*Execs, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetExecs not implemented")
 }
 func (UnimplementedExecsServiceServer) AddExecs(context.Context, *Execs) (*Execs, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddExecs not implemented")
@@ -230,20 +230,20 @@ func RegisterExecsServiceServer(s grpc.ServiceRegistrar, srv ExecsServiceServer)
 	s.RegisterService(&ExecsService_ServiceDesc, srv)
 }
 
-func _ExecsService_GetExecss_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ExecsService_GetExecs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetExecsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ExecsServiceServer).GetExecss(ctx, in)
+		return srv.(ExecsServiceServer).GetExecs(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ExecsService_GetExecss_FullMethodName,
+		FullMethod: ExecsService_GetExecs_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExecsServiceServer).GetExecss(ctx, req.(*GetExecsRequest))
+		return srv.(ExecsServiceServer).GetExecs(ctx, req.(*GetExecsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -418,8 +418,8 @@ var ExecsService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*ExecsServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetExecss",
-			Handler:    _ExecsService_GetExecss_Handler,
+			MethodName: "GetExecs",
+			Handler:    _ExecsService_GetExecs_Handler,
 		},
 		{
 			MethodName: "AddExecs",

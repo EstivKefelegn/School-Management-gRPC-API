@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func AddExecsToDb(ctx context.Context, execsFromReq []*pb.Exec) ([]*pb.Exec, error) {
@@ -22,7 +24,7 @@ func AddExecsToDb(ctx context.Context, execsFromReq []*pb.Exec) ([]*pb.Exec, err
 	newExecs := make([]*models.Exec, len(execsFromReq))
 	for i, pbExec := range execsFromReq {
 		newExecs[i] = mapPbExecToModelTeacher(pbExec)
-		hashPassword, err := utils.HashPassword(newExecs[i].Password)	
+		hashPassword, err := utils.HashPassword(newExecs[i].Password)
 		if err != nil {
 			return nil, utils.ErrorHandler(err, "Internal Error")
 		}
@@ -44,11 +46,40 @@ func AddExecsToDb(ctx context.Context, execsFromReq []*pb.Exec) ([]*pb.Exec, err
 		objectID, ok := result.InsertedID.(primitive.ObjectID)
 		if ok {
 			exec.Id = objectID.Hex()
-		}		
+		}
 
 		// The return the values to the user
 		pbExec := mapModelExecToPb(*exec)
 		addedExecs = append(addedExecs, pbExec)
 	}
 	return addedExecs, nil
+}
+
+func GetExecsFromDb(ctx context.Context, sortOptions primitive.D, filter primitive.M) ([]*pb.Exec, error) {
+	client, err := CreateMongoClient()
+	if err != nil {
+		return nil, err
+	}
+
+	defer client.Disconnect(ctx)
+
+	col1 := client.Database("school").Collection("execs")
+
+	var cursor *mongo.Cursor
+	if len(sortOptions) < 1 {
+		cursor, err = col1.Find(ctx, filter)
+	} else {
+		cursor, err = col1.Find(ctx, filter, options.Find().SetSort(sortOptions))
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	defer cursor.Close(ctx)
+
+	execs, err := decodeEntities(ctx, cursor, func() *pb.Exec { return &pb.Exec{}}, func() *models.Exec { return &models.Exec{} })
+	if err != nil {
+		return nil, err
+	}
+	return execs, nil
 }

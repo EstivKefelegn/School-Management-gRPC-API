@@ -661,8 +661,8 @@ type GetExecsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Exec          *Exec                  `protobuf:"bytes,1,opt,name=exec,proto3" json:"exec,omitempty"`
 	SortField     []*SortField           `protobuf:"bytes,2,rep,name=sortField,proto3" json:"sortField,omitempty"`
-	PageNumber    int32                  `protobuf:"varint,3,opt,name=page_number,json=pageNumber,proto3" json:"page_number,omitempty"`
-	PageSize      int32                  `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageNumber    uint32                 `protobuf:"varint,3,opt,name=page_number,json=pageNumber,proto3" json:"page_number,omitempty"`
+	PageSize      uint32                 `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -711,14 +711,14 @@ func (x *GetExecsRequest) GetSortField() []*SortField {
 	return nil
 }
 
-func (x *GetExecsRequest) GetPageNumber() int32 {
+func (x *GetExecsRequest) GetPageNumber() uint32 {
 	if x != nil {
 		return x.PageNumber
 	}
 	return 0
 }
 
-func (x *GetExecsRequest) GetPageSize() int32 {
+func (x *GetExecsRequest) GetPageSize() uint32 {
 	if x != nil {
 		return x.PageSize
 	}
@@ -955,9 +955,9 @@ const file_execs_proto_rawDesc = "" +
 	"\x04exec\x18\x01 \x01(\v2\n" +
 	".main.ExecR\x04exec\x12-\n" +
 	"\tsortField\x18\x02 \x03(\v2\x0f.main.SortFieldR\tsortField\x12\x1f\n" +
-	"\vpage_number\x18\x03 \x01(\x05R\n" +
+	"\vpage_number\x18\x03 \x01(\rR\n" +
 	"pageNumber\x12\x1b\n" +
-	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"\xca\x03\n" +
+	"\tpage_size\x18\x04 \x01(\rR\bpageSize\"\xca\x03\n" +
 	"\x04Exec\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
@@ -976,9 +976,9 @@ const file_execs_proto_rawDesc = "" +
 	"\x0finactive_status\x18\r \x01(\bR\x0einactiveStatus\")\n" +
 	"\x05Execs\x12 \n" +
 	"\x05execs\x18\x01 \x03(\v2\n" +
-	".main.ExecR\x05execs2\xcd\x04\n" +
-	"\fExecsService\x12/\n" +
-	"\tGetExecss\x12\x15.main.GetExecsRequest\x1a\v.main.Execs\x12$\n" +
+	".main.ExecR\x05execs2\xcc\x04\n" +
+	"\fExecsService\x12.\n" +
+	"\bGetExecs\x12\x15.main.GetExecsRequest\x1a\v.main.Execs\x12$\n" +
 	"\bAddExecs\x12\v.main.Execs\x1a\v.main.Execs\x12'\n" +
 	"\vUpdateExecs\x12\v.main.Execs\x1a\v.main.Execs\x12;\n" +
 	"\vDeleteExecs\x12\r.main.ExecIds\x1a\x1d.main.DeleteExecsConfirmation\x128\n" +
@@ -1026,7 +1026,7 @@ var file_execs_proto_depIdxs = []int32{
 	14, // 1: main.GetExecsRequest.exec:type_name -> main.Exec
 	16, // 2: main.GetExecsRequest.sortField:type_name -> main.SortField
 	14, // 3: main.Execs.execs:type_name -> main.Exec
-	13, // 4: main.ExecsService.GetExecss:input_type -> main.GetExecsRequest
+	13, // 4: main.ExecsService.GetExecs:input_type -> main.GetExecsRequest
 	15, // 5: main.ExecsService.AddExecs:input_type -> main.Execs
 	15, // 6: main.ExecsService.UpdateExecs:input_type -> main.Execs
 	12, // 7: main.ExecsService.DeleteExecs:input_type -> main.ExecIds
@@ -1036,7 +1036,7 @@ var file_execs_proto_depIdxs = []int32{
 	3,  // 11: main.ExecsService.ResetPassword:input_type -> main.ResetPasswordRequest
 	1,  // 12: main.ExecsService.ForgotPassword:input_type -> main.ForgotPasswordRequest
 	12, // 13: main.ExecsService.DeactivateUser:input_type -> main.ExecIds
-	15, // 14: main.ExecsService.GetExecss:output_type -> main.Execs
+	15, // 14: main.ExecsService.GetExecs:output_type -> main.Execs
 	15, // 15: main.ExecsService.AddExecs:output_type -> main.Execs
 	15, // 16: main.ExecsService.UpdateExecs:output_type -> main.Execs
 	10, // 17: main.ExecsService.DeleteExecs:output_type -> main.DeleteExecsConfirmation

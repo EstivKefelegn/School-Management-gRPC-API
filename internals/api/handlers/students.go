@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"context"
-	"fmt"
+	"schoolmanagementGRPC/internals/models"
 	"schoolmanagementGRPC/internals/respositories/mongodb"
 	pb "schoolmanagementGRPC/proto/gen"
 
@@ -20,10 +20,39 @@ func (s *Server) AddStudents(ctx context.Context, req *pb.Students) (*pb.Student
 	}
 
 	addedStudents, err := mongodb.AddStudentsToDb(ctx, req.GetStudents())
-	fmt.Println("Students ========== ",addedStudents)
+
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return &pb.Students{Students: addedStudents}, nil
+}
+
+func (s *Server) GetStudents(ctx context.Context, req *pb.GetStudentsRequest) (*pb.Students, error) {
+	filter, err := buildFilter(req.Student, &models.Student{})
+	if err != nil {
+		return nil, err
+	}
+	
+
+	sortOptions := buildSortOptions(req.GetSortField())
+	
+	pageNumber := req.GetPageNumber()
+	pageSize := req.GetPageSize()
+	
+	if pageNumber < 1 {
+		pageNumber = 1
+	}
+
+	if pageSize < 1 {
+		pageSize = 10
+	}
+
+	students, err := mongodb.GetStudentsFromDb(ctx, sortOptions, filter, uint32(pageNumber), uint32(pageSize))
+	if err != nil {
+		return nil, err
+	}
+
+	
+	return &pb.Students{Students: students}, nil
 }

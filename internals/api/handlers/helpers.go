@@ -68,7 +68,7 @@ func buildSortOptions(sortFields []*pb.SortField) bson.D {
 	for _, sortField := range sortFields {
 		order := 1
 		if sortField.GetOrder() == pb.Order_DESC {
-			order = 0
+			order = -1
 		}
 		sortOptions = append(sortOptions, bson.E{Key: sortField.Field, Value: order})
 	}
