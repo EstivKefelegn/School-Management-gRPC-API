@@ -2,14 +2,11 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"schoolmanagementGRPC/internals/models"
 	"schoolmanagementGRPC/internals/respositories/mongodb"
 	"schoolmanagementGRPC/pkg/utils"
 	pb "schoolmanagementGRPC/proto/gen"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -65,39 +62,25 @@ func (s *Server) DeleteTeachers(ctx context.Context, req *pb.TeacherIds) (*pb.De
 		teacherIdsToDelete = append(teacherIdsToDelete, v.Id)
 	}
 
-	client, err := mongodb.CreateMongoClient()
+	deletedIds, err := mongodb.DeleteTeachersFromDb(ctx, teacherIdsToDelete)
 	if err != nil {
-		return nil, utils.ErrorHandler(err, "internal error")
-	}
-
-	defer client.Disconnect(ctx)
-	objectIds := make([]primitive.ObjectID, len(teacherIdsToDelete))
-	for i, id := range teacherIdsToDelete {
-		objectId, err := primitive.ObjectIDFromHex(id)
-		if err != nil {
-			return nil, utils.ErrorHandler(err, fmt.Sprintf("incorrect id: %v", id))
-		}
-		objectIds[i] = objectId
-	}
-
-	filter := bson.M{"_id": bson.M{"$in": objectIds}}
-	result, err := client.Database("school").Collection("teachers").DeleteMany(ctx, filter)
-	if err != nil {
-		return nil, utils.ErrorHandler(err, "internal error")
-	}
-
-	if result.DeletedCount == 0 {
-		return nil, utils.ErrorHandler(err, "no teachers were deleted")
-	}
-
-	deletedIds := make([]string, result.DeletedCount)
-	for i, id := range objectIds {
-		deletedIds[i] = id.Hex()
+		return nil, err
 	}
 
 	return &pb.DeleteTeachersConfirmation{
-		Status: "Teachers successfully deleted",
+		Status:     "Teachers successfully deleted",
 		DeletedIds: deletedIds,
 	}, nil
 
+}
+
+func (s *Server) GetStudentCountByClassTeacher(ctx context.Context, req *pb.TeacherId) (*pb.StudentCount, error) {
+	teacherId := req.GetId()
+
+	count, err := mongodb.GetStudentCountByTeacherIdFromDb(ctx, teacherId)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &pb.StudentCount{Status: true, StudentCount: int32(count)}, nil
 }
