@@ -29,13 +29,22 @@ func (s *Server) GetExecs(ctx context.Context, req *pb.GetExecsRequest) (*pb.Exe
 	filter, err := buildFilter(req.Exec, &models.Exec{})
 	if err != nil {
 		return nil, nil
-	}	
+	}
 
 	sortOptions := buildSortOptions(req.GetSortField())
-	
+
 	execs, err := mongodb.GetExecsFromDb(ctx, sortOptions, filter)
 	if err != nil {
 		return nil, err
 	}
 	return &pb.Execs{Execs: execs}, nil
+}
+
+func (s *Server) UpdateExecs(ctx context.Context, req *pb.Execs) (*pb.Execs, error) {
+	updatedExec, err := mongodb.ModifyExecsInDb(ctx, req.Execs)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &pb.Execs{Execs: updatedExec}, nil
 }

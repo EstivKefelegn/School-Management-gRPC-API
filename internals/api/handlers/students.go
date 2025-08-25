@@ -33,13 +33,12 @@ func (s *Server) GetStudents(ctx context.Context, req *pb.GetStudentsRequest) (*
 	if err != nil {
 		return nil, err
 	}
-	
 
 	sortOptions := buildSortOptions(req.GetSortField())
-	
+
 	pageNumber := req.GetPageNumber()
 	pageSize := req.GetPageSize()
-	
+
 	if pageNumber < 1 {
 		pageNumber = 1
 	}
@@ -53,6 +52,14 @@ func (s *Server) GetStudents(ctx context.Context, req *pb.GetStudentsRequest) (*
 		return nil, err
 	}
 
-	
 	return &pb.Students{Students: students}, nil
+}
+
+func (s *Server) UpdateStudents(ctx context.Context, req *pb.Students) (*pb.Students, error) {
+	updatedStudenst, err := mongodb.ModifyStudentInDb(ctx, req.Students)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &pb.Students{Students: updatedStudenst}, nil
 }

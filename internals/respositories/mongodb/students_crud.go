@@ -2,10 +2,13 @@ package mongodb
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"schoolmanagementGRPC/internals/models"
 	"schoolmanagementGRPC/pkg/utils"
 	pb "schoolmanagementGRPC/proto/gen"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -20,7 +23,7 @@ func AddStudentsToDb(ctx context.Context, studentsFromReq []*pb.Student) ([]*pb.
 
 	newStudents := make([]*models.Student, len(studentsFromReq))
 	for i, student := range studentsFromReq {
-		newStudents[i] = mapPbStudentToModelTeacher(student)
+		newStudents[i] = mapPbStudentToModelStudent(student)
 	}
 
 	var addedStudents []*pb.Student
@@ -72,4 +75,48 @@ func GetStudentsFromDb(ctx context.Context, sortOptions primitive.D, filter prim
 	}
 
 	return students, nil
+}
+
+func ModifyStudentInDb(ctx context.Context, pbStudent []*pb.Student) ([]*pb.Student, error) {
+	client, err := CreateMongoClient()
+	if err != nil {
+		return nil, utils.ErrorHandler(err, "Internal Error")
+	}
+	defer client.Disconnect(ctx)
+
+	var updatedStudents []*pb.Student
+	for _, student := range pbStudent {
+		if student.Id == "" {
+			return nil, utils.ErrorHandler(errors.New("id can't be blank"), "id can't be blank")
+		}
+
+		modelStudent := mapPbStudentToModelStudent(student)
+		objectId, err := primitive.ObjectIDFromHex(student.Id)
+
+		if err != nil {
+			return nil, utils.ErrorHandler(err, "Imvalid ID")
+		}
+
+		modelDoc, err := bson.Marshal(modelStudent)
+		if err != nil {
+			return nil, utils.ErrorHandler(err, "Internal Error")
+		}
+
+		var updatedDoc bson.M
+		err = bson.Unmarshal(modelDoc, &updatedDoc)
+		if err != nil {
+			return nil, utils.ErrorHandler(err, "Internal Error")
+		}
+
+		delete(updatedDoc, "_id")
+		_, err = client.Database("school").Collection("students").UpdateOne(ctx, bson.M{"_id": objectId}, bson.M{"$set": updatedDoc})
+		if err != nil {
+			return nil, utils.ErrorHandler(err, fmt.Sprintf("error updating student id:", student.Id))
+		}
+
+		updatdedStudent := mapModelStudentToPb(*modelStudent)
+		updatedStudents = append(updatedStudents, updatdedStudent)
+	}
+
+	return updatedStudents, nil
 }
